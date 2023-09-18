@@ -56,9 +56,38 @@ extra-doc-files:    CHANGELOG.md
 common warnings
     ghc-options: -Wall -Werror
 
+common default-extensions
+    default-extensions:
+        BangPatterns
+        CApiFFI
+        CPP
+        ConstraintKinds
+        DeriveDataTypeable
+        DeriveGeneric
+        DeriveTraversable
+        ExistentialQuantification
+        FlexibleContexts
+        FlexibleInstances
+        GeneralizedNewtypeDeriving
+        InstanceSigs
+        KindSignatures
+        LambdaCase
+        MagicHash
+        MultiParamTypeClasses
+        PatternSynonyms
+        RankNTypes
+        RecordWildCards
+        ScopedTypeVariables
+        TupleSections
+        TypeApplications
+        TypeFamilies
+        TypeOperators
+        ViewPatterns
+
 library
     -- Import common warning flags.
     import:           warnings
+                    , default-extensions
 
     -- Modules exported by the library.
     exposed-modules:  Streamly.Data.Serialize.Instances
@@ -89,9 +118,10 @@ library
     -- Base language which the package is written in.
     default-language: Haskell2010
 
-test-suite streamly-serialization-instances-test
+test-suite main
     -- Import common warning flags.
     import:           warnings
+                    , default-extensions
 
     -- Base language which the package is written in.
     default-language: Haskell2010
@@ -115,6 +145,10 @@ test-suite streamly-serialization-instances-test
     build-depends:
          base
        , streamly-core
+       , random
+       , streamly-serialize-instances
+       , quickcheck-instances
+       , hspec
+       , QuickCheck
+       , time
        , text
-       , bytestring
-       , streamly-serialization-instances
