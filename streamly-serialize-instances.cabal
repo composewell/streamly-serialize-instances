@@ -102,14 +102,15 @@ library
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base
-                    , streamly-core
-                    , text
-                    , bytestring
+    build-depends:    base           >= 4.12     && < 4.19
+                      -- We use Internal modules in streamly-core, hence the
+                      -- restrictive constraints.
+                    , streamly-core  == 0.2.0.*
+                    , text           >= 1.2      && < 2
+                    , bytestring     >= 0.10.0   && < 0.13.0
                     , vector
                     , aeson
                     , time
-                    , integer-gmp
                     , scientific
 
     -- Directories containing source files.
