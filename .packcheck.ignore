@@ -1,0 +1,4 @@
+.packcheck.ignore
+.github/workflows/packcheck.yml
+.gitignore
+cabal.project.user
