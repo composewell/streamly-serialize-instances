@@ -1,3 +1,11 @@
+-- |
+-- Module      : Streamly.Data.Serialize.Instances
+-- Copyright   : (c) 2023 Composewell technologies
+-- License     : Apache-2.0
+-- Maintainer  : streamly@composewell.com
+-- Stability   : experimental
+-- Portability : GHC
+
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE RecordWildCards #-}
