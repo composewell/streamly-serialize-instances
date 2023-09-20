@@ -22,6 +22,7 @@ import qualified Streamly.Internal.Data.Serialize as Serialize
 import Data.Time (UTCTime)
 
 import qualified Data.Text as TextS
+import qualified Data.Text.Lazy as TextL
 
 import Test.Hspec.QuickCheck
 import Test.Hspec as H
@@ -87,6 +88,9 @@ testCases = do
 
     prop "Strict Text"
         $ \(x :: TextS.Text) -> roundtrip x
+
+    prop "Lazy Text"
+        $ \(x :: TextL.Text) -> roundtrip x
 
 --------------------------------------------------------------------------------
 -- Main
