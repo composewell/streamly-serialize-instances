@@ -94,7 +94,7 @@ library
     exposed-modules:  Streamly.Data.Serialize.Instances
 
     -- Modules included in this library but not exported.
-    -- other-modules:    Streamly.Data.Serialize.Instances.Text
+    other-modules:    Streamly.Data.Serialize.Instances.Text
     --                 , Streamly.Data.Serialize.Instances.ByteString
     --                 , Streamly.Data.Serialize.Instances.Value
 
