@@ -1,6 +1,3 @@
--- This is required as all the instances in this module are orphan instances.
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 -- |
 -- Module      : Streamly.Data.Serialize.Instances
 -- Copyright   : (c) 2023 Composewell technologies
@@ -20,7 +17,9 @@ import Streamly.Internal.Data.Serialize (Serialize(..))
 import Streamly.Internal.Data.Unbox (MutableByteArray(..))
 
 import qualified Data.Text.Internal as Strict (Text(..))
+import qualified Data.Text.Lazy as Lazy
 import qualified Streamly.Internal.Data.Unbox as Unbox
+import qualified Streamly.Internal.Data.Serialize.TH as Serialize
 
 #if MIN_VERSION_text(2,0,0)
 
@@ -84,3 +83,5 @@ instance Serialize Strict.Text where
 --------------------------------------------------------------------------------
 -- Lazy Text
 --------------------------------------------------------------------------------
+
+$(Serialize.deriveSerialize ''Lazy.Text)

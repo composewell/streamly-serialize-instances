@@ -55,7 +55,9 @@ extra-doc-files:    CHANGELOG.md
 -- extra-source-files:
 
 common warnings
-    ghc-options: -Wall -Werror
+    -- -fno-warn-orphans is required as all the instances in this package are
+    -- orphan instances.
+    ghc-options: -Wall -Werror -fno-warn-orphans
 
 common default-extensions
     default-extensions:
@@ -84,6 +86,7 @@ common default-extensions
         TypeFamilies
         TypeOperators
         ViewPatterns
+        TemplateHaskell
 
 library
     -- Import common warning flags.

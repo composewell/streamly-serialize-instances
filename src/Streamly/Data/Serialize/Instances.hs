@@ -6,13 +6,6 @@
 -- Stability   : experimental
 -- Portability : GHC
 
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE MagicHash #-}
-{-# LANGUAGE RecordWildCards #-}
-
--- This is required as all the instances in this module are orphan instances.
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module Streamly.Data.Serialize.Instances () where
 
 --------------------------------------------------------------------------------
