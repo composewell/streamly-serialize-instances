@@ -59,6 +59,12 @@ common warnings
     -- orphan instances.
     ghc-options: -Wall -Werror -fno-warn-orphans
 
+common optimization-options
+    ghc-options: -O2
+                 -fdicts-strict
+                 -fspec-constr-recursive=16
+                 -fmax-worker-args=16
+
 common default-extensions
     default-extensions:
         BangPatterns
@@ -123,7 +129,7 @@ library
     -- Base language which the package is written in.
     default-language: Haskell2010
 
-test-suite main
+test-suite serialization-tests
     -- Import common warning flags.
     import:           warnings
                     , default-extensions
@@ -157,3 +163,39 @@ test-suite main
        , QuickCheck
        , time
        , text
+
+benchmark serialization-benchmarks
+    -- Import common warning flags.
+    import:           warnings
+                    , default-extensions
+                    , optimization-options
+
+    -- Base language which the package is written in.
+    default-language: Haskell2010
+
+    -- Modules included in this executable, other than Main.
+    -- other-modules:
+
+    -- LANGUAGE extensions used by modules in this package.
+    -- other-extensions:
+
+    -- The interface type and version of the test suite.
+    type:             exitcode-stdio-1.0
+
+    -- Directories containing source files.
+    hs-source-dirs:   benchmark
+
+    -- The entrypoint to the test suite.
+    main-is:          Main.hs
+
+    -- Test dependencies.
+    build-depends:
+         base
+       , streamly-core
+       , streamly-serialize-instances
+       , random
+       , deepseq     >= 1.4.1 && < 1.5
+       , tasty-bench >= 0.3 && < 0.4
+       , tasty       >= 1.4.1 && < 1.5
+       , text
+       , QuickCheck
