@@ -24,6 +24,9 @@ import Data.Time (UTCTime)
 import qualified Data.Text as TextS
 import qualified Data.Text.Lazy as TextL
 
+import Data.ByteString as StrictByteString
+import Data.ByteString.Lazy as LazyByteString
+
 import Test.Hspec.QuickCheck
 import Test.Hspec as H
 
@@ -91,6 +94,12 @@ testCases = do
 
     prop "Lazy Text"
         $ \(x :: TextL.Text) -> roundtrip x
+
+    prop "Strict ByteString"
+        $ \(x :: StrictByteString.ByteString) -> roundtrip x
+
+    prop "Lazy ByteString"
+        $ \(x :: LazyByteString.ByteString) -> roundtrip x
 
 --------------------------------------------------------------------------------
 -- Main
