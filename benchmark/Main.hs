@@ -11,20 +11,22 @@ module Main (main) where
 -- Imports
 -------------------------------------------------------------------------------
 
-import Control.Monad (when)
+import Control.Monad (unless, replicateM)
 import Data.Function ((&))
-import Control.DeepSeq (NFData(..), deepseq)
+import Control.DeepSeq (NFData(..), deepseq, force)
 import System.Random (randomRIO)
-import Test.QuickCheck (arbitrary)
 import Streamly.Data.Serialize.Instances ()
-import Control.DeepSeq (force)
-import Test.QuickCheck (Gen, generate)
+import Test.QuickCheck (Gen, generate, arbitrary)
 import Streamly.Internal.Data.Unbox (newBytes, MutableByteArray)
 import Streamly.Internal.Data.Serialize hiding (encode)
 
 import qualified Streamly.Data.Stream as Stream
 import qualified Data.Text as TextS
 import qualified Data.Text.Lazy as TextL
+
+import Data.ByteString as StrictByteString hiding (count)
+import Data.ByteString.Lazy as LazyByteString hiding (count)
+import Data.Word (Word8)
 
 import Test.Tasty.Bench
 
@@ -171,18 +173,27 @@ main = do
     !lazyText <- do
         testSList <- Stream.replicateM 20 (genStrictText 50) & Stream.toList
         pure $ force $ TextL.fromChunks testSList
+    !strictByteString <- genStrictByteString 1000
+    !lazyByteString <- genLazyByteString 10 100 -- 100 Strict bytestrings each of len 10
 
     -- Asserts
-    when (not (TextS.length strictText == 1000))
+    unless (TextS.length strictText == 1000)
          (error "TextS.length strictText == 1000")
-    when (not (TextL.length lazyText == 1000))
+    unless (TextL.length lazyText == 1000)
          (error "TextL.length lazyText == 1000")
+    
+    unless (StrictByteString.length strictByteString == 1000)
+         (error "TextS.length strictText == 1000")
+    unless (LazyByteString.length lazyByteString == 1000)
+         (error "TextS.length strictText == 1000")
 
     -- Benchmarks
     defaultMain
         [ bencher "[Int]" intList 100
         , bencher "Strict.Text" strictText 100
         , bencher "Lazy.Text" lazyText 100
+        , bencher "Strict.ByteString" strictByteString 100
+        , bencher "Strict.LazyByteString" lazyByteString 100
         ]
 
     where
@@ -192,3 +203,12 @@ main = do
         Stream.replicateM n genChar
             & Stream.toList
             & fmap (force . TextS.pack)
+
+    genStrictByteString n = do
+        let genWord8 = generate (arbitrary :: Gen Word8)
+        Stream.replicateM n genWord8
+            & Stream.toList
+            & fmap (force . StrictByteString.pack)
+
+    genLazyByteString n m = do
+        LazyByteString.fromChunks <$> replicateM n (genStrictByteString m)

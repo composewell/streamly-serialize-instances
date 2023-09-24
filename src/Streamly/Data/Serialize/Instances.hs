@@ -17,10 +17,10 @@ import Data.Maybe (fromJust)
 import Data.Scientific (Scientific)
 import Data.Time (Day, TimeOfDay, LocalTime, DiffTime, UTCTime)
 import Streamly.Data.Serialize.Instances.Text ()
+import Streamly.Data.Serialize.Instances.ByteString ()
 import Streamly.Internal.Data.Serialize (Serialize(..))
 
 import qualified Data.Aeson as Aeson
-import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Vector as Vector
 import qualified Streamly.Internal.Data.Serialize.TH as Serialize
 
@@ -42,25 +42,6 @@ $(Serialize.deriveSerialize ''UTCTime)
 --------------------------------------------------------------------------------
 
 $(Serialize.deriveSerialize ''Scientific)
-
---------------------------------------------------------------------------------
--- BSL.ByteString
---------------------------------------------------------------------------------
-
--- TODO: Serialize it independently
-
--- XXX Extremely inefficient serialization of BSL.ByteString
--- XXX Depends on list serialization
-instance Serialize BSL.ByteString where
-    {-# INLINE size #-}
-    size i val = i + fromIntegral (BSL.length val) + 8
-    -- size i val = size i (BSL.unpack val)
-
-    {-# INLINE deserialize #-}
-    deserialize off arr end = fmap BSL.pack <$> deserialize off arr end
-
-    {-# INLINE serialize #-}
-    serialize off arr val = serialize off arr (BSL.unpack val)
 
 --------------------------------------------------------------------------------
 -- Aeson.Value
