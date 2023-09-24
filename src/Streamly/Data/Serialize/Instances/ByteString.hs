@@ -9,7 +9,8 @@ import Data.ByteString.Internal as Strict
 import Data.ByteString.Lazy as Lazy
 import qualified Streamly.Internal.Data.Unbox as Unbox
 import GHC.Exts
-import Foreign.ForeignPtr
+import Foreign.ForeignPtr (withForeignPtr)
+import Foreign.Ptr (plusPtr)
 import GHC.Base (IO(..))
 import Control.Monad (foldM_)
 
@@ -33,14 +34,15 @@ instance Serialize Strict.ByteString where
         return (off1 + lenBytes, Strict.PS fp 0 lenBytes)
 
     {-# INLINE serialize #-}
-    serialize off arr (Strict.PS fp _ lenBytes) = do
+    serialize off arr (Strict.PS fp srcOffset lenBytes) = do
         off1 <- serialize off arr lenBytes
         let arrD# = Unbox.getMutableByteArray# arr
             !(I# dstStartBytes#) = off1
             !(I# lenBytes#) = lenBytes
-        withForeignPtr fp $ \(Ptr addr#) -> IO $ \s# -> (# copyAddrToByteArray#
-                                    addr# arrD# dstStartBytes# lenBytes# s#
-                                , () #)
+        withForeignPtr fp $ \srcPtr -> let !(Ptr addr#) = srcPtr `plusPtr` srcOffset
+                                         in IO $ \s# -> (# copyAddrToByteArray#
+                                                addr# arrD# dstStartBytes# lenBytes# s#
+                                            , () #)
         pure (off1 + lenBytes)
 
 
@@ -69,12 +71,13 @@ instance Serialize Lazy.ByteString where
         off1 <- serialize off arr lenBytes
         let arrD# = Unbox.getMutableByteArray# arr
             strictByteStringArr = Lazy.toChunks lazyByteString
-        foldM_ (\newdstStartBytes (Strict.PS fp _ len) -> do
+        foldM_ (\newdstStartBytes (Strict.PS fp srcOffset len) -> do
             let !(I# len#) = len
                 !(I# newdstStartBytes#) = newdstStartBytes
-            withForeignPtr fp $ \(Ptr addr#) -> IO $ \s# -> (# copyAddrToByteArray#
-                                    addr# arrD# newdstStartBytes# len# s#
-                                , () #)
+            withForeignPtr fp $ \srcPtr -> let !(Ptr addr#) = srcPtr `plusPtr` srcOffset
+                                            in IO $ \s# -> (# copyAddrToByteArray#
+                                                addr# arrD# newdstStartBytes# len# s#
+                                            , () #)
             return (newdstStartBytes + len)
             ) off1 strictByteStringArr
         pure (off1 + lenBytes)
