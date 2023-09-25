@@ -23,6 +23,7 @@ import Data.Time (UTCTime)
 
 import qualified Data.Text as TextS
 import qualified Data.Text.Lazy as TextL
+import qualified Data.Vector as Vector
 
 import Data.ByteString as StrictByteString
 import Data.ByteString.Lazy as LazyByteString
@@ -91,6 +92,9 @@ testCases = do
 
     prop "Strict Text"
         $ \(x :: TextS.Text) -> roundtrip x
+
+    prop "Vector"
+        $ \(x :: Vector.Vector String) -> roundtrip x
 
     prop "Lazy Text"
         $ \(x :: TextL.Text) -> roundtrip x

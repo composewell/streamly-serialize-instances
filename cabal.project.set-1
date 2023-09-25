@@ -9,3 +9,4 @@ source-repository-package
 constraints:
      text == 1.2.5.0
    , bytestring == 0.10.10.0
+   , vector == 0.12.2.0
