@@ -23,10 +23,11 @@ import Data.Time (UTCTime)
 
 import qualified Data.Text as TextS
 import qualified Data.Text.Lazy as TextL
+import qualified Data.Aeson as Aeson
 import qualified Data.Vector as Vector
 
-import Data.ByteString as StrictByteString
-import Data.ByteString.Lazy as LazyByteString
+import qualified Data.ByteString as StrictByteString
+import qualified Data.ByteString.Lazy as LazyByteString
 
 import Test.Hspec.QuickCheck
 import Test.Hspec as H
@@ -95,6 +96,9 @@ testCases = do
 
     prop "Vector"
         $ \(x :: Vector.Vector String) -> roundtrip x
+
+    prop "Aeson"
+        $ \(x :: Aeson.Value) -> roundtrip x
 
     prop "Lazy Text"
         $ \(x :: TextL.Text) -> roundtrip x

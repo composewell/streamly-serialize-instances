@@ -14,7 +14,7 @@ module Streamly.Data.Serialize.Instances () where
 
 import Data.Fixed (Fixed)
 import Data.Int (Int64)
-import Data.Maybe (fromJust)
+import Data.Map (Map)
 import Data.Proxy (Proxy (..))
 import Data.Scientific (Scientific)
 import Data.Time (Day, TimeOfDay, LocalTime, DiffTime, UTCTime)
@@ -23,6 +23,7 @@ import Streamly.Data.Serialize.Instances.ByteString ()
 import Streamly.Internal.Data.Serialize (Serialize(..))
 import Streamly.Internal.Data.Unbox (MutableByteArray)
 
+import qualified Data.Aeson.KeyMap as Aeson
 import qualified Data.Aeson as Aeson
 import qualified Data.Vector as Vector
 import qualified Data.Vector.Mutable as MVector
@@ -52,19 +53,10 @@ $(Serialize.deriveSerialize ''Scientific)
 -- Aeson.Value
 --------------------------------------------------------------------------------
 
--- TODO: Serialize it independently
-
--- XXX Extremely inefficient serialization of Aeson.Value
-instance Serialize Aeson.Value where
-    {-# INLINE size #-}
-    size i val = size i (Aeson.encode val)
-
-    {-# INLINE deserialize #-}
-    deserialize off arr end =
-        fmap (fromJust . Aeson.decode) <$> deserialize off arr end
-
-    {-# INLINE serialize #-}
-    serialize off arr val = serialize off arr (Aeson.encode val)
+$(Serialize.deriveSerialize ''Map)
+$(Serialize.deriveSerialize ''Aeson.Key)
+$(Serialize.deriveSerialize ''Aeson.KeyMap)
+$(Serialize.deriveSerialize ''Aeson.Value)
 
 --------------------------------------------------------------------------------
 -- Vector.Vector
