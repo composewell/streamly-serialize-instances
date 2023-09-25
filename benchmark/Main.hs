@@ -13,6 +13,7 @@ module Main (main) where
 
 import Control.Monad (unless, replicateM)
 import Data.Function ((&))
+import Data.String (fromString)
 import Data.Word (Word8)
 import Control.DeepSeq (NFData(..), deepseq, force)
 import System.Random (randomRIO)
@@ -26,6 +27,7 @@ import qualified Data.Text as TextS
 import qualified Data.Text.Lazy as TextL
 import qualified Data.ByteString as StrictByteString
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Aeson as Aeson
 import qualified Data.Vector as Vector
 
 import Test.Tasty.Bench
@@ -177,6 +179,7 @@ main = do
     !lazyByteString <- genLazyByteString 20 50 -- 20 chunks of bytestring that
                                                -- are of length 50 each.
     !vectorA <- genVectorA 1000
+    let !aesonValue = genAesonValue 100
 
     -- Asserts
     unless (TextS.length strictText == 1000)
@@ -198,6 +201,7 @@ main = do
         , bencher "Strict.ByteString" strictByteString 100
         , bencher "Lazy.ByteString" lazyByteString 100
         , bencher "Vector" vectorA 100
+        , bencher "Aeson.Value" aesonValue 100
         ]
 
     where
@@ -221,3 +225,14 @@ main = do
         let genInt = generate (arbitrary :: Gen Int)
         vectorA <- Vector.replicateM n genInt
         return $ force vectorA
+
+    genAesonValue :: Int -> Aeson.Value
+    genAesonValue 0 = Aeson.object []
+    genAesonValue n =
+        Aeson.object
+            [ fromString "array"  Aeson..= ([1, 2, 3, 4, 5] :: [Int])
+            , fromString "string" Aeson..= ("abcde" :: String)
+            , fromString "number" Aeson..= (23.45 :: Double)
+            , fromString "bool" Aeson..= (True :: Bool)
+            , fromString "object" Aeson..= genAesonValue (n - 1)
+            ]
