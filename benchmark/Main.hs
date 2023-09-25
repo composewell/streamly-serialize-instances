@@ -19,14 +19,13 @@ import Streamly.Data.Serialize.Instances ()
 import Test.QuickCheck (Gen, generate, arbitrary)
 import Streamly.Internal.Data.Unbox (newBytes, MutableByteArray)
 import Streamly.Internal.Data.Serialize hiding (encode)
+import Data.Word (Word8)
 
 import qualified Streamly.Data.Stream as Stream
 import qualified Data.Text as TextS
 import qualified Data.Text.Lazy as TextL
-
-import Data.ByteString as StrictByteString hiding (count)
-import Data.ByteString.Lazy as LazyByteString hiding (count)
-import Data.Word (Word8)
+import qualified Data.ByteString as StrictByteString
+import qualified Data.ByteString.Lazy as LazyByteString
 
 import Test.Tasty.Bench
 
@@ -183,9 +182,9 @@ main = do
          (error "TextL.length lazyText == 1000")
     
     unless (StrictByteString.length strictByteString == 1000)
-         (error "TextS.length strictText == 1000")
+         (error "StrictByteString.length strictByteString == 1000")
     unless (LazyByteString.length lazyByteString == 1000)
-         (error "TextS.length strictText == 1000")
+         (error "LazyByteString.length lazyByteString == 1000")
 
     -- Benchmarks
     defaultMain
@@ -193,7 +192,7 @@ main = do
         , bencher "Strict.Text" strictText 100
         , bencher "Lazy.Text" lazyText 100
         , bencher "Strict.ByteString" strictByteString 100
-        , bencher "Strict.LazyByteString" lazyByteString 100
+        , bencher "Lazy.ByteString" lazyByteString 100
         ]
 
     where

@@ -163,7 +163,7 @@ test-suite serialization-tests
        , QuickCheck
        , time
        , text
-       , bytestring
+       , bytestring     >= 0.10.0   && < 0.13.0
 
 benchmark serialization-benchmarks
     -- Import common warning flags.
@@ -200,4 +200,4 @@ benchmark serialization-benchmarks
        , tasty       >= 1.4.1 && < 1.5
        , text
        , QuickCheck
-       , bytestring
+       , bytestring     >= 0.10.0   && < 0.13.0
