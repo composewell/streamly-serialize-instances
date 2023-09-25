@@ -122,6 +122,7 @@ library
                     , aeson
                     , time
                     , scientific
+                    , containers
 
     -- Directories containing source files.
     hs-source-dirs:   src
@@ -163,6 +164,7 @@ test-suite serialization-tests
        , QuickCheck
        , time
        , text
+       , aeson
 
 benchmark serialization-benchmarks
     -- Import common warning flags.
