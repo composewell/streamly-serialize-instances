@@ -18,15 +18,16 @@ import Data.Scientific (Scientific)
 import Data.Time (Day, TimeOfDay, LocalTime, DiffTime, UTCTime)
 import Streamly.Data.Serialize.Instances.Text ()
 import Streamly.Internal.Data.Serialize (Serialize(..))
+import Data.Proxy (Proxy (..))
+import Streamly.Internal.Data.Unbox (MutableByteArray)
+
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Vector as Vector
 import qualified Streamly.Internal.Data.Serialize.TH as Serialize
-import Data.List (foldl')
-import Data.Proxy
 import qualified Data.Vector.Mutable as MVector
 import qualified Streamly.Internal.Data.Unbox as Unbox
-import Streamly.Internal.Data.Unbox (MutableByteArray)
+
 --------------------------------------------------------------------------------
 -- Time
 --------------------------------------------------------------------------------
@@ -91,29 +92,34 @@ instance Serialize a => Serialize (Vector.Vector a) where
 
     {-# INLINE size #-}
     size :: Int -> (Vector.Vector a) -> Int
-    size acc = foldl' size (acc + Unbox.sizeOf (Proxy :: Proxy Int))
+    size acc = Vector.foldl' size (acc + Unbox.sizeOf (Proxy :: Proxy Int))
 
     {-# INLINE serialize #-}
     serialize :: Int -> MutableByteArray -> (Vector.Vector a) -> IO Int
     serialize off arr val = do
-        let len = length val
-        finalOffset <- Vector.foldM (\curOff v -> serialize curOff arr v) (off+ Unbox.sizeOf (Proxy :: Proxy Int)) val
-        _ <- serialize off arr len
+        let len = Vector.length val
+        finalOffset <- 
+            Vector.foldM'
+                (\curOff v -> serialize curOff arr v)
+                (off + Unbox.sizeOf (Proxy :: Proxy Int))
+                val
+        _ <- Unbox.pokeByteIndex off arr len
         pure finalOffset
 
     {-# INLINE deserialize #-}
     deserialize :: Int -> MutableByteArray -> Int -> IO (Int, Vector.Vector a)
     deserialize off arr s = do
-        (off', len) <- deserialize off arr s
+
+        (off1, len) <- deserialize off arr s
         val <- MVector.new len
-        (off1, dVal) <- getDeserialized len 0 off' val
-        dVal' <- Vector.freeze dVal
-        pure (off1, dVal')
+        (off2, val1) <- fillVector len 0 off1 val
+        val2 <- Vector.freeze val1
+        pure (off2, val2)
         where
 
-            getDeserialized len acc off' val
-                | acc >= len = pure (off', val)
-                | otherwise = do
-                    (off1, v) <- deserialize off' arr s
-                    MVector.write val acc v
-                    getDeserialized len (acc + 1) off1 val
+        fillVector len acc off1 val
+            | acc >= len = pure (off1, val)
+            | otherwise = do
+                (off2, v) <- deserialize off1 arr s
+                MVector.write val acc v
+                fillVector len (acc + 1) off2 val

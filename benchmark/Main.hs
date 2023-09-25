@@ -25,6 +25,7 @@ import Streamly.Internal.Data.Serialize hiding (encode)
 import qualified Streamly.Data.Stream as Stream
 import qualified Data.Text as TextS
 import qualified Data.Text.Lazy as TextL
+import qualified Data.Vector as Vector
 
 import Test.Tasty.Bench
 
@@ -171,18 +172,22 @@ main = do
     !lazyText <- do
         testSList <- Stream.replicateM 20 (genStrictText 50) & Stream.toList
         pure $ force $ TextL.fromChunks testSList
+    !vectorA <- genVectorA 1000
 
     -- Asserts
     when (not (TextS.length strictText == 1000))
          (error "TextS.length strictText == 1000")
     when (not (TextL.length lazyText == 1000))
          (error "TextL.length lazyText == 1000")
+    when (not (Vector.length vectorA == 1000))
+         (error "Vector.length vectorA == 1000")
 
     -- Benchmarks
     defaultMain
         [ bencher "[Int]" intList 100
         , bencher "Strict.Text" strictText 100
         , bencher "Lazy.Text" lazyText 100
+        , bencher "Vector" vectorA 100
         ]
 
     where
@@ -192,3 +197,8 @@ main = do
         Stream.replicateM n genChar
             & Stream.toList
             & fmap (force . TextS.pack)
+
+    genVectorA n = do
+        let genInt = generate (arbitrary :: Gen Int)
+        vectorA <- Vector.replicateM n genInt
+        return $ force vectorA

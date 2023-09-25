@@ -23,10 +23,10 @@ import Data.Time (UTCTime)
 
 import qualified Data.Text as TextS
 import qualified Data.Text.Lazy as TextL
+import qualified Data.Vector as Vector
 
 import Test.Hspec.QuickCheck
 import Test.Hspec as H
-import qualified Data.Vector as Vector
 --------------------------------------------------------------------------------
 -- Helpers
 --------------------------------------------------------------------------------
