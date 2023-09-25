@@ -163,6 +163,7 @@ test-suite serialization-tests
        , QuickCheck
        , time
        , text
+       , vector
 
 benchmark serialization-benchmarks
     -- Import common warning flags.
@@ -199,3 +200,4 @@ benchmark serialization-benchmarks
        , tasty       >= 1.4.1 && < 1.5
        , text
        , QuickCheck
+       , vector

@@ -26,7 +26,7 @@ import qualified Data.Text.Lazy as TextL
 
 import Test.Hspec.QuickCheck
 import Test.Hspec as H
-
+import qualified Data.Vector as Vector
 --------------------------------------------------------------------------------
 -- Helpers
 --------------------------------------------------------------------------------
@@ -88,6 +88,9 @@ testCases = do
 
     prop "Strict Text"
         $ \(x :: TextS.Text) -> roundtrip x
+        
+    prop "Vector"
+        $ \(x :: Vector.Vector String) -> roundtrip x
 
     prop "Lazy Text"
         $ \(x :: TextL.Text) -> roundtrip x
