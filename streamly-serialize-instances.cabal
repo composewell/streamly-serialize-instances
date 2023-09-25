@@ -118,7 +118,7 @@ library
                     , streamly-core  == 0.2.0.*
                     , text           >= 1.2      && < 2.1
                     , bytestring     >= 0.10.0   && < 0.13.0
-                    , vector
+                    , vector         >= 0.12     && < 0.14
                     , aeson
                     , time
                     , scientific
@@ -164,6 +164,7 @@ test-suite serialization-tests
        , time
        , text
        , bytestring     >= 0.10.0   && < 0.13.0
+       , vector
 
 benchmark serialization-benchmarks
     -- Import common warning flags.
@@ -201,3 +202,4 @@ benchmark serialization-benchmarks
        , text
        , QuickCheck
        , bytestring     >= 0.10.0   && < 0.13.0
+       , vector

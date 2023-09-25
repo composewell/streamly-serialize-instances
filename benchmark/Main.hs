@@ -26,6 +26,7 @@ import qualified Data.Text as TextS
 import qualified Data.Text.Lazy as TextL
 import qualified Data.ByteString as StrictByteString
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Vector as Vector
 
 import Test.Tasty.Bench
 
@@ -175,13 +176,15 @@ main = do
     !strictByteString <- genStrictByteString 1000
     !lazyByteString <- genLazyByteString 20 50 -- 20 chunks of bytestring that
                                                -- are of length 50 each.
+    !vectorA <- genVectorA 1000
 
     -- Asserts
     unless (TextS.length strictText == 1000)
          (error "TextS.length strictText == 1000")
     unless (TextL.length lazyText == 1000)
          (error "TextL.length lazyText == 1000")
-
+    unless (Vector.length vectorA == 1000)
+         (error "Vector.length vectorA == 1000")
     unless (StrictByteString.length strictByteString == 1000)
          (error "StrictByteString.length strictByteString == 1000")
     unless (LazyByteString.length lazyByteString == 1000)
@@ -194,6 +197,7 @@ main = do
         , bencher "Lazy.Text" lazyText 100
         , bencher "Strict.ByteString" strictByteString 100
         , bencher "Lazy.ByteString" lazyByteString 100
+        , bencher "Vector" vectorA 100
         ]
 
     where
@@ -212,3 +216,8 @@ main = do
 
     genLazyByteString n m = do
         LazyByteString.fromChunks <$> replicateM n (genStrictByteString m)
+
+    genVectorA n = do
+        let genInt = generate (arbitrary :: Gen Int)
+        vectorA <- Vector.replicateM n genInt
+        return $ force vectorA

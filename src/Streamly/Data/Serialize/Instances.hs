@@ -13,16 +13,21 @@ module Streamly.Data.Serialize.Instances () where
 --------------------------------------------------------------------------------
 
 import Data.Fixed (Fixed)
+import Data.Int (Int64)
 import Data.Maybe (fromJust)
+import Data.Proxy (Proxy (..))
 import Data.Scientific (Scientific)
 import Data.Time (Day, TimeOfDay, LocalTime, DiffTime, UTCTime)
 import Streamly.Data.Serialize.Instances.Text ()
 import Streamly.Data.Serialize.Instances.ByteString ()
 import Streamly.Internal.Data.Serialize (Serialize(..))
+import Streamly.Internal.Data.Unbox (MutableByteArray)
 
 import qualified Data.Aeson as Aeson
 import qualified Data.Vector as Vector
+import qualified Data.Vector.Mutable as MVector
 import qualified Streamly.Internal.Data.Serialize.TH as Serialize
+import qualified Streamly.Internal.Data.Unbox as Unbox
 
 --------------------------------------------------------------------------------
 -- Time
@@ -65,16 +70,40 @@ instance Serialize Aeson.Value where
 -- Vector.Vector
 --------------------------------------------------------------------------------
 
--- TODO: Serialize it independently
-
--- XXX Extremely inefficient serialization of Vector
 instance Serialize a => Serialize (Vector.Vector a) where
-    {-# INLINE size #-}
-    size i val = size i (Vector.toList val)
 
-    {-# INLINE deserialize #-}
-    deserialize off arr end =
-        fmap Vector.fromList <$> deserialize off arr end
+    {-# INLINE size #-}
+    size :: Int -> (Vector.Vector a) -> Int
+    size acc = Vector.foldl' size (acc + Unbox.sizeOf (Proxy :: Proxy Int64))
 
     {-# INLINE serialize #-}
-    serialize off arr val = serialize off arr (Vector.toList val)
+    serialize :: Int -> MutableByteArray -> (Vector.Vector a) -> IO Int
+    serialize off arr val = do
+        let len = Vector.length val
+        finalOffset <-
+            Vector.foldM'
+                (\curOff v -> serialize curOff arr v)
+                (off + Unbox.sizeOf (Proxy :: Proxy Int64))
+                val
+        Unbox.pokeByteIndex off arr ((fromIntegral :: Int -> Int64) len)
+        pure finalOffset
+
+    {-# INLINE deserialize #-}
+    deserialize :: Int -> MutableByteArray -> Int -> IO (Int, Vector.Vector a)
+    deserialize off arr s = do
+
+        (off1, len64) <- deserialize off arr s
+        let len = (fromIntegral :: Int64 -> Int) len64
+        val <- MVector.new len
+        (off2, val1) <- fillVector len 0 off1 val
+        val2 <- Vector.freeze val1
+        pure (off2, val2)
+
+        where
+
+        fillVector len acc off1 val
+            | acc >= len = pure (off1, val)
+            | otherwise = do
+                (off2, v) <- deserialize off1 arr s
+                MVector.write val acc v
+                fillVector len (acc + 1) off2 val
