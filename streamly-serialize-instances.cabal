@@ -119,10 +119,10 @@ library
                     , text           >= 1.2      && < 2.1
                     , bytestring     >= 0.10.0   && < 0.13.0
                     , vector
-                    , aeson
+                    , aeson          >= 2.0      && < 3.0
                     , time
                     , scientific
-                    , containers
+                    , containers     >= 0.6.7    && < 1.0.0
 
     -- Directories containing source files.
     hs-source-dirs:   src
@@ -164,7 +164,7 @@ test-suite serialization-tests
        , QuickCheck
        , time
        , text
-       , aeson
+       , aeson                          >= 2.0  && < 3.0
 
 benchmark serialization-benchmarks
     -- Import common warning flags.
@@ -201,3 +201,5 @@ benchmark serialization-benchmarks
        , tasty       >= 1.4.1 && < 1.5
        , text
        , QuickCheck
+       , aeson       >= 2.0  && < 3.0
+       , vector
