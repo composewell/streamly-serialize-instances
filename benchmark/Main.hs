@@ -13,13 +13,13 @@ module Main (main) where
 
 import Control.Monad (unless, replicateM)
 import Data.Function ((&))
+import Data.Word (Word8)
 import Control.DeepSeq (NFData(..), deepseq, force)
 import System.Random (randomRIO)
 import Streamly.Data.Serialize.Instances ()
 import Test.QuickCheck (Gen, generate, arbitrary)
 import Streamly.Internal.Data.Unbox (newBytes, MutableByteArray)
 import Streamly.Internal.Data.Serialize hiding (encode)
-import Data.Word (Word8)
 
 import qualified Streamly.Data.Stream as Stream
 import qualified Data.Text as TextS
@@ -173,14 +173,15 @@ main = do
         testSList <- Stream.replicateM 20 (genStrictText 50) & Stream.toList
         pure $ force $ TextL.fromChunks testSList
     !strictByteString <- genStrictByteString 1000
-    !lazyByteString <- genLazyByteString 10 100 -- 100 Strict bytestrings each of len 10
+    !lazyByteString <- genLazyByteString 20 50 -- 20 chunks of bytestring that
+                                               -- are of length 50 each.
 
     -- Asserts
     unless (TextS.length strictText == 1000)
          (error "TextS.length strictText == 1000")
     unless (TextL.length lazyText == 1000)
          (error "TextL.length lazyText == 1000")
-    
+
     unless (StrictByteString.length strictByteString == 1000)
          (error "StrictByteString.length strictByteString == 1000")
     unless (LazyByteString.length lazyByteString == 1000)
