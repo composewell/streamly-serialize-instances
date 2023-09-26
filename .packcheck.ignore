@@ -2,3 +2,4 @@
 .github/workflows/packcheck.yml
 .gitignore
 cabal.project.user
+cabal.project.set-1

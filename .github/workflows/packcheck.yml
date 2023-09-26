@@ -66,7 +66,6 @@ jobs:
       # ------------------------------------------------------------------------
       CABAL_CHECK_RELAX: y
       CABAL_HACKAGE_MIRROR: "hackage.haskell.org:http://hackage.fpcomplete.com"
-      CABAL_PROJECT: "cabal.project.user"
 
       # ------------------------------------------------------------------------
       # Where to find the required tools
@@ -107,35 +106,47 @@ jobs:
             command: cabal-v2
             runner: ubuntu-latest
             ghc_version: 9.6.2
+            pack_options: >-
+                CABAL_PROJECT=cabal.project.user
 
           - name: ci
             command: cabal-v2
             runner: ubuntu-latest
             ghc_version: 9.4.4
+            pack_options: >-
+                CABAL_PROJECT=cabal.project.user
 
           - name: ci
             command: cabal-v2
             runner: ubuntu-latest
             ghc_version: 9.2.2
+            pack_options: >-
+                CABAL_PROJECT=cabal.project.user
 
           - name: ci
             command: cabal-v2
             runner: ubuntu-latest
             ghc_version: 8.10.3
+            pack_options: >-
+                CABAL_PROJECT=cabal.project.user
+
+          - name: ci
+            ghc_version: 8.8.3
+            command: cabal-v2
+            runner: macos-latest
+            pack_options: >-
+                CABAL_PROJECT=cabal.project.user
 
           - name: ci
             command: cabal-v2
             runner: ubuntu-latest
             ghc_version: 8.6.4
+            pack_options: >-
+                CABAL_PROJECT=cabal.project.set-1
 
           # - name: ci
           #   command: stack
           #   runner: ubuntu-latest
-
-          # - name: ci
-          #   ghc_version: 8.8.3
-          #   command: cabal-v2
-          #   runner: macos-latest
 
           # - name: ci
           #   command: hlint
