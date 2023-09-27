@@ -20,6 +20,7 @@ import qualified Streamly.Internal.Data.Array as Array
 import qualified Streamly.Internal.Data.Serialize as Serialize
 
 import Data.Time (UTCTime)
+import Data.Scientific (Scientific)
 
 import qualified Data.Text as TextS
 import qualified Data.Text.Lazy as TextL
@@ -90,6 +91,9 @@ testCases = do
 
     prop "UTCTime"
         $ \(x :: UTCTime) -> roundtrip x
+
+    prop "Scientific"
+        $ \(x :: Scientific) -> roundtrip x
 
     prop "Strict Text"
         $ \(x :: TextS.Text) -> roundtrip x
