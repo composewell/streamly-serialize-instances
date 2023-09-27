@@ -163,6 +163,7 @@ test-suite serialization-tests
        , hspec
        , QuickCheck
        , time
+       , scientific
        , text
        , bytestring     >= 0.10.0   && < 0.13.0
        , vector
