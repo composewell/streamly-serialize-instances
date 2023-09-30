@@ -29,6 +29,7 @@ import Streamly.Internal.Data.Unbox (MutableByteArray)
 import qualified Data.Aeson.KeyMap as Aeson
 #endif
 
+import qualified Data.Map as Map
 import qualified Data.Aeson as Aeson
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Vector as Vector
@@ -63,7 +64,26 @@ $(Serialize.deriveSerialize ''Scientific)
 -- Map
 --------------------------------------------------------------------------------
 
-$(Serialize.deriveSerialize ''Map)
+-- Comparing 2 stategies for encoding a HashMap
+--
+-- 1. Direct binary serialization
+-- 2. Converting the Map to a [] (using toList) and then encoding it using
+--    binary serilization
+--
+-- Strategy 2 is more efficient than Strategy 1.
+-- Check why this is the case.
+
+-- $(Serialize.deriveSerialize ''Map)
+
+instance (Ord k, Serialize k, Serialize v) => Serialize (Map k v) where
+    {-# INLINE size #-}
+    size acc val = size acc (Map.toList val)
+    {-# INLINE serialize #-}
+    serialize off arr val = serialize off arr (Map.toList val)
+    {-# INLINE deserialize #-}
+    deserialize off arr end = do
+        (off1, kvList) <- deserialize off arr end
+        pure (off1, Map.fromList kvList)
 
 --------------------------------------------------------------------------------
 -- HashMap
