@@ -119,10 +119,12 @@ library
                     , text           >= 1.2      && < 2.1
                     , bytestring     >= 0.10.0   && < 0.13.0
                     , vector         >= 0.12     && < 0.14
-                    , aeson          >= 2.0      && < 3.0
+                    , aeson          >= 1.5      && < 2.3
+                    , unordered-containers
                     , time
                     , scientific
                     , containers     >= 0.6.7    && < 1.0.0
+                    , hashable       >= 1.2      && < 2.3
 
     -- Directories containing source files.
     hs-source-dirs:   src
@@ -165,9 +167,10 @@ test-suite serialization-tests
        , time
        , scientific
        , text
-       , bytestring     >= 0.10.0   && < 0.13.0
+       , bytestring
        , vector
-       , aeson          >= 2.0  && < 3.0
+       , aeson
+       , unordered-containers
 
 benchmark serialization-benchmarks
     -- Import common warning flags.
@@ -199,11 +202,15 @@ benchmark serialization-benchmarks
        , streamly-core
        , streamly-serialize-instances
        , random
-       , deepseq     >= 1.4.1 && < 1.5
-       , tasty-bench >= 0.3 && < 0.4
-       , tasty       >= 1.4.1 && < 1.5
+       , deepseq
+       , tasty
+       , tasty-bench
+       -- This is required when direct binary serialization is used for hashmap.
+       -- There seems to be some bug in tasty-bench in certain conditions.
+       -- , gauge
        , text
        , QuickCheck
-       , bytestring  >= 0.10.0   && < 0.13.0
-       , aeson       >= 2.0  && < 3.0
+       , bytestring
+       , aeson
        , vector
+       , unordered-containers

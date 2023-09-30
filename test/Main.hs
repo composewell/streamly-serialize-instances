@@ -30,8 +30,44 @@ import qualified Data.Vector as Vector
 import qualified Data.ByteString as StrictByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 
+import qualified Data.HashMap.Strict as SHashMap
+import qualified Data.HashMap.Internal.Array as HArr
+
+#if (!(MIN_VERSION_aeson(2,0,3)))
+import Test.QuickCheck
+#endif
 import Test.Hspec.QuickCheck
 import Test.Hspec as H
+
+--------------------------------------------------------------------------------
+-- Arbitrary instances
+--------------------------------------------------------------------------------
+
+instance Eq a => Eq (HArr.Array a) where
+    (==) a b = HArr.sameArray1 (==) a b
+
+#if (!(MIN_VERSION_aeson(2,0,3)))
+
+instance Arbitrary Aeson.Value where
+    arbitrary = go 5
+
+        where
+
+        go :: Int -> Gen Aeson.Value
+        go 0 = pure $ Aeson.object []
+        go n = do
+            obj <- go (n - 1)
+            arr <- sequence $ map go [(n - 1),(n - 2) .. 0]
+            (arbText :: TextS.Text) <- arbitrary
+            pure $ Aeson.object
+                [ TextS.pack "array"  Aeson..= arr
+                , TextS.pack "string" Aeson..= arbText
+                , TextS.pack "number" Aeson..= (23.45 :: Double)
+                , TextS.pack "bool" Aeson..= (True :: Bool)
+                , TextS.pack "object" Aeson..= obj
+                ]
+
+#endif
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -100,6 +136,12 @@ testCases = do
 
     prop "Vector"
         $ \(x :: Vector.Vector String) -> roundtrip x
+
+    prop "HashMap (Array Int)"
+        $ \(x :: [Int]) -> roundtrip (HArr.fromList (length x) x)
+
+    prop "Strict HashMap"
+        $ \(x :: SHashMap.HashMap TextS.Text TextS.Text) -> roundtrip x
 
     prop "Aeson"
         $ \(x :: Aeson.Value) -> roundtrip x
