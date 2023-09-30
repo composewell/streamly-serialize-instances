@@ -31,6 +31,7 @@ import qualified Data.Aeson as Aeson
 import qualified Data.Vector as Vector
 
 import Test.Tasty.Bench
+-- import Gauge
 
 -------------------------------------------------------------------------------
 -- Size helpers
@@ -85,6 +86,10 @@ pokeTimes val times = do
     arr <- newBytes n
     loopWith times poke arr val
 
+-- There is peoblem with using tasty. For 'Value', 'encode' goes to an infinite
+-- loop. This is possibly because of how tasty deals with outliers.
+--
+-- This only happens when direct binary serilaizatin is used for HashMap.
 {-# INLINE encode #-}
 encode :: Serialize a => a -> IO ()
 encode val = do
