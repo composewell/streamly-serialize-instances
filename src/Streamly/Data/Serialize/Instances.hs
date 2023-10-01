@@ -107,7 +107,7 @@ $(Serialize.deriveSerialize ''HashMap.Leaf)
 $(Serialize.deriveSerialize ''HashMap.HashMap)
 -}
 
-instance (Hashable k, Serialize k, Serialize v) =>
+instance (Eq k, Hashable k, Serialize k, Serialize v) =>
          Serialize (HashMap.HashMap k v) where
     {-# INLINE size #-}
     size acc val = size acc (HashMap.toList val)
