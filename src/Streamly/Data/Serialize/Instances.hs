@@ -12,7 +12,6 @@ module Streamly.Data.Serialize.Instances () where
 -- Imports
 --------------------------------------------------------------------------------
 
-import Control.Monad.ST (stToIO)
 import Data.Fixed (Fixed)
 import Data.Hashable (Hashable)
 import Data.Int (Int64)
@@ -36,10 +35,6 @@ import qualified Data.Vector as Vector
 import qualified Data.Vector.Mutable as MVector
 import qualified Streamly.Internal.Data.Serialize.TH as Serialize
 import qualified Streamly.Internal.Data.Unbox as Unbox
-
--- Internal imports
--- import qualified Data.HashMap.Internal as HashMap (Leaf)
-import qualified Data.HashMap.Internal.Array as HMArr
 
 --------------------------------------------------------------------------------
 -- Time
@@ -88,51 +83,6 @@ instance (Ord k, Serialize k, Serialize v) => Serialize (Map k v) where
 --------------------------------------------------------------------------------
 -- HashMap
 --------------------------------------------------------------------------------
-
-instance Serialize a => Serialize (HMArr.Array a) where
-
-    {-# INLINE size #-}
-    size :: Int -> HMArr.Array a -> Int
-    size acc = HMArr.foldl' size (acc + Unbox.sizeOf (Proxy :: Proxy Int64))
-
-    {-# INLINE serialize #-}
-    serialize :: Int -> MutableByteArray -> HMArr.Array a -> IO Int
-    serialize off arr val = do
-        let len = HMArr.length val
-        mval <- stToIO $ HMArr.unsafeThaw val
-        finalOffset <-
-            unfillArray len 0 (off + Unbox.sizeOf (Proxy :: Proxy Int64)) mval
-        Unbox.pokeByteIndex off arr ((fromIntegral :: Int -> Int64) len)
-        pure finalOffset
-
-        where
-
-        unfillArray len acc off1 hmArr
-            | acc >= len = pure off1
-            | otherwise = do
-                v <- stToIO $ HMArr.read hmArr acc
-                off2 <- serialize off1 arr v
-                unfillArray len (acc + 1) off2 hmArr
-
-    {-# INLINE deserialize #-}
-    deserialize :: Int -> MutableByteArray -> Int -> IO (Int, HMArr.Array a)
-    deserialize off arr s = do
-
-        (off1, len64) <- deserialize off arr s
-        let len = (fromIntegral :: Int64 -> Int) len64
-        val <- stToIO $ HMArr.new_ len
-        (off2, val1) <- fillArray len 0 off1 val
-        val2 <- stToIO $ HMArr.unsafeFreeze val1
-        pure (off2, val2)
-
-        where
-
-        fillArray len acc off1 val
-            | acc >= len = pure (off1, val)
-            | otherwise = do
-                (off2, v) <- deserialize off1 arr s
-                stToIO $ HMArr.write val acc v
-                fillArray len (acc + 1) off2 val
 
 -- Comparing 2 stategies for encoding a HashMap
 --

@@ -31,7 +31,6 @@ import qualified Data.ByteString as StrictByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 
 import qualified Data.HashMap.Strict as SHashMap
-import qualified Data.HashMap.Internal.Array as HArr
 
 #if (!(MIN_VERSION_aeson(2,0,3)))
 import Test.QuickCheck
@@ -42,9 +41,6 @@ import Test.Hspec as H
 --------------------------------------------------------------------------------
 -- Arbitrary instances
 --------------------------------------------------------------------------------
-
-instance Eq a => Eq (HArr.Array a) where
-    (==) a b = HArr.sameArray1 (==) a b
 
 #if (!(MIN_VERSION_aeson(2,0,3)))
 
@@ -136,9 +132,6 @@ testCases = do
 
     prop "Vector"
         $ \(x :: Vector.Vector String) -> roundtrip x
-
-    prop "HashMap (Array Int)"
-        $ \(x :: [Int]) -> roundtrip (HArr.fromList (length x) x)
 
     prop "Strict HashMap"
         $ \(x :: SHashMap.HashMap TextS.Text TextS.Text) -> roundtrip x
