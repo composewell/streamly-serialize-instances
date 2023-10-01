@@ -123,7 +123,7 @@ library
                     , unordered-containers
                     , time
                     , scientific
-                    , containers     >= 0.6.7    && < 1.0.0
+                    , containers     >= 0.5.10.2 && < 1.0.0
                     , hashable       >= 1.2      && < 2.3
 
     -- Directories containing source files.

@@ -11,3 +11,4 @@ constraints:
    , bytestring == 0.10.10.0
    , vector == 0.12.2.0
    , aeson == 1.5.6.0
+   , containers == 0.5.10.2
