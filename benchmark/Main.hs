@@ -19,9 +19,9 @@ import Control.DeepSeq (NFData(..), deepseq, force)
 import System.Random (randomRIO)
 import Streamly.Data.Serialize.Instances ()
 import Test.QuickCheck (Gen, generate, arbitrary)
-import Streamly.Internal.Data.Unbox (newBytes, MutableByteArray)
-import Streamly.Internal.Data.Serialize hiding (encode)
+import Streamly.Internal.Data.MutByteArray (Serialize, MutByteArray)
 
+import qualified Streamly.Internal.Data.MutByteArray as MBA
 import qualified Streamly.Data.Stream as Stream
 import qualified Data.Text as TextS
 import qualified Data.Text.Lazy as TextL
@@ -39,7 +39,7 @@ import Test.Tasty.Bench
 
 {-# INLINE getSize #-}
 getSize :: forall a. Serialize a => a -> Int
-getSize = size 0
+getSize = MBA.addSizeTo 0
 
 -------------------------------------------------------------------------------
 -- Common helpers
@@ -76,14 +76,14 @@ benchSink name times f = bench name (nfIO (randomRIO (times, times) >>= f))
 -------------------------------------------------------------------------------
 
 {-# INLINE poke #-}
-poke :: Serialize a => MutableByteArray -> a -> IO ()
-poke arr val = serialize 0 arr val >> return ()
+poke :: Serialize a => MutByteArray -> a -> IO ()
+poke arr val = MBA.serializeAt 0 arr val >> return ()
 
 {-# INLINE pokeTimes #-}
 pokeTimes :: Serialize a => a -> Int -> IO ()
 pokeTimes val times = do
     let n = getSize val
-    arr <- newBytes n
+    arr <- MBA.new n
     loopWith times poke arr val
 
 -- There is peoblem with using tasty. For 'Value', 'encode' goes to an infinite
@@ -94,8 +94,8 @@ pokeTimes val times = do
 encode :: Serialize a => a -> IO ()
 encode val = do
     let n = getSize val
-    arr <- newBytes n
-    serialize 0 arr val >> return ()
+    arr <- MBA.new n
+    MBA.serializeAt 0 arr val >> return ()
 
 {-# INLINE encodeTimes #-}
 encodeTimes :: Serialize a => a -> Int -> IO ()
@@ -103,9 +103,9 @@ encodeTimes val times = loop times encode val
 
 {-# INLINE peek #-}
 peek :: forall a. (NFData a, Serialize a) =>
-    (a, Int) -> MutableByteArray -> IO ()
+    (a, Int) -> MutByteArray -> IO ()
 peek (_val, n) arr = do
-        (_, val1 :: a) <- deserialize 0 arr n
+        (_, val1 :: a) <- MBA.deserializeAt 0 arr n
         -- If the datatype is not deeply strict or deepseq is not used then use
         -- Equality.
         -- Ensure that we are actually constructing the type and using it. This
@@ -125,17 +125,17 @@ peek (_val, n) arr = do
 {-# INLINE peekTimes #-}
 peekTimes :: (NFData a, Serialize a) => Int -> a -> Int -> IO ()
 peekTimes n val times = do
-    arr <- newBytes n
-    _ <- serialize 0 arr val
+    arr <- MBA.new n
+    _ <- MBA.serializeAt 0 arr val
     loopWith times peek (val, n) arr
 
 {-# INLINE roundtrip #-}
 roundtrip :: forall a. (NFData a, Serialize a) => a -> IO ()
 roundtrip val = do
     let n = getSize val
-    arr <- newBytes n
-    _ <- serialize 0 arr val
-    (_, val1 :: a) <- deserialize 0 arr n
+    arr <- MBA.new n
+    _ <- MBA.serializeAt 0 arr val
+    (_, val1 :: a) <- MBA.deserializeAt 0 arr n
     -- Do not remove this or use deepseq, see the comments in peek.
     {-
     if (val1 /= val)

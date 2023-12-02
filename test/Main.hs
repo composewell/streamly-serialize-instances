@@ -12,12 +12,12 @@ module Main (main) where
 --------------------------------------------------------------------------------
 
 import System.Random (randomRIO)
-import Streamly.Internal.Data.Unbox (MutableByteArray, newBytes)
+import Streamly.Internal.Data.MutByteArray (MutByteArray)
 import Streamly.Data.Serialize.Instances ()
 import Test.QuickCheck.Instances ()
 
 import qualified Streamly.Internal.Data.Array as Array
-import qualified Streamly.Internal.Data.Serialize as Serialize
+import qualified Streamly.Internal.Data.MutByteArray as MBA
 
 import Data.Time (UTCTime)
 import Data.Scientific (Scientific)
@@ -70,11 +70,11 @@ instance Arbitrary Aeson.Value where
 --------------------------------------------------------------------------------
 
 poke ::
-       forall a. Serialize.Serialize a
+       forall a. MBA.Serialize a
     => a
-    -> IO (MutableByteArray, Int, Int)
+    -> IO (MutByteArray, Int, Int)
 poke val = do
-    let sz = Serialize.size 0 val
+    let sz = MBA.addSizeTo 0 val
 
     let excessSize = 100
     randomOff <- randomRIO (10, excessSize)
@@ -83,33 +83,33 @@ poke val = do
     let arrSize = sz + excessSize
         serStartOff = randomOff
         serEndOff = randomOff + sz
-    arr <- newBytes arrSize
+    arr <- MBA.new arrSize
 
-    off1 <- Serialize.serialize serStartOff arr val
+    off1 <- MBA.serializeAt serStartOff arr val
     off1 `shouldBe` serEndOff
     pure (arr, serStartOff, serEndOff)
 
 peekAndVerify ::
-       forall a. (Eq a, Show a, Serialize.Serialize a)
-    => (MutableByteArray, Int, Int)
+       forall a. (Eq a, Show a, MBA.Serialize a)
+    => (MutByteArray, Int, Int)
     -> a
     -> IO ()
 peekAndVerify (arr, serStartOff, serEndOff) val = do
-    (off2, val2) <- Serialize.deserialize serStartOff arr serEndOff
+    (off2, val2) <- MBA.deserializeAt serStartOff arr serEndOff
     val2 `shouldBe` val
     off2 `shouldBe` serEndOff
     let slice = Array.Array arr serStartOff serEndOff
-    val `shouldBe` Serialize.decode slice
+    val `shouldBe` Array.deserialize slice
     clonedSlice <- Array.clone slice
-    val `shouldBe` Serialize.decode clonedSlice
+    val `shouldBe` Array.deserialize clonedSlice
 
 roundtrip
-    :: forall a. (Eq a, Show a, Serialize.Serialize a)
+    :: forall a. (Eq a, Show a, MBA.Serialize a)
     => a
     -> IO ()
 roundtrip val = do
 
-    val `shouldBe` Serialize.decode (Serialize.encode val)
+    val `shouldBe` Array.deserialize (Array.serialize val)
 
     res <- poke val
     peekAndVerify res val
