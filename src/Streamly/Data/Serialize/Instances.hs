@@ -21,8 +21,7 @@ import Data.Scientific (Scientific)
 import Data.Time (Day, TimeOfDay, LocalTime, DiffTime, UTCTime)
 import Streamly.Data.Serialize.Instances.Text ()
 import Streamly.Data.Serialize.Instances.ByteString ()
-import Streamly.Internal.Data.Serialize (Serialize(..))
-import Streamly.Internal.Data.Unbox (MutableByteArray)
+import Streamly.Internal.Data.MutByteArray (Serialize(..), MutByteArray)
 
 #if MIN_VERSION_aeson(2,0,0)
 import qualified Data.Aeson.KeyMap as Aeson
@@ -33,27 +32,24 @@ import qualified Data.Aeson as Aeson
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Vector as Vector
 import qualified Data.Vector.Mutable as MVector
-import qualified Streamly.Internal.Data.Serialize.TH as Serialize
-import qualified Streamly.Internal.Data.Unbox as Unbox
+import qualified Streamly.Internal.Data.MutByteArray as MBA
 
 --------------------------------------------------------------------------------
 -- Time
 --------------------------------------------------------------------------------
 
-$(Serialize.deriveSerializeWith
-      Serialize.defaultConfig
-      [d|instance Serialize (Fixed a)|])
-$(Serialize.deriveSerialize ''Day)
-$(Serialize.deriveSerialize ''TimeOfDay)
-$(Serialize.deriveSerialize ''LocalTime)
-$(Serialize.deriveSerialize ''DiffTime)
-$(Serialize.deriveSerialize ''UTCTime)
+$(MBA.deriveSerialize [d|instance Serialize (Fixed a)|])
+$(MBA.deriveSerialize [d|instance Serialize Day|])
+$(MBA.deriveSerialize [d|instance Serialize TimeOfDay|])
+$(MBA.deriveSerialize [d|instance Serialize LocalTime|])
+$(MBA.deriveSerialize [d|instance Serialize DiffTime|])
+$(MBA.deriveSerialize [d|instance Serialize UTCTime|])
 
 --------------------------------------------------------------------------------
 -- Scientific
 --------------------------------------------------------------------------------
 
-$(Serialize.deriveSerialize ''Scientific)
+$(MBA.deriveSerialize [d|instance Serialize Scientific|])
 
 --------------------------------------------------------------------------------
 -- Map
@@ -68,16 +64,16 @@ $(Serialize.deriveSerialize ''Scientific)
 -- Strategy 2 is more efficient than Strategy 1.
 -- Check why this is the case.
 
--- $(Serialize.deriveSerialize ''Map)
+-- $(MBA.deriveSerialize [d|instance Serialize Map|])
 
 instance (Ord k, Serialize k, Serialize v) => Serialize (Map k v) where
-    {-# INLINE size #-}
-    size acc val = size acc (Map.toList val)
-    {-# INLINE serialize #-}
-    serialize off arr val = serialize off arr (Map.toList val)
-    {-# INLINE deserialize #-}
-    deserialize off arr end = do
-        (off1, kvList) <- deserialize off arr end
+    {-# INLINE addSizeTo #-}
+    addSizeTo acc val = addSizeTo acc (Map.toList val)
+    {-# INLINE serializeAt #-}
+    serializeAt off arr val = serializeAt off arr (Map.toList val)
+    {-# INLINE deserializeAt #-}
+    deserializeAt off arr end = do
+        (off1, kvList) <- deserializeAt off arr end
         pure (off1, Map.fromList kvList)
 
 --------------------------------------------------------------------------------
@@ -103,19 +99,19 @@ instance (Ord k, Serialize k, Serialize v) => Serialize (Map k v) where
 -- much nesting. We can revisit this to find the exact cause.
 
 {-
-$(Serialize.deriveSerialize ''HashMap.Leaf)
-$(Serialize.deriveSerialize ''HashMap.HashMap)
+$(MBA.deriveSerialize [d|instance Serialize HashMap.Leaf|])
+$(MBA.deriveSerialize [d|instance Serialize HashMap.HashMap|])
 -}
 
 instance (Eq k, Hashable k, Serialize k, Serialize v) =>
          Serialize (HashMap.HashMap k v) where
-    {-# INLINE size #-}
-    size acc val = size acc (HashMap.toList val)
-    {-# INLINE serialize #-}
-    serialize off arr val = serialize off arr (HashMap.toList val)
-    {-# INLINE deserialize #-}
-    deserialize off arr end = do
-        (off1, kvList) <- deserialize off arr end
+    {-# INLINE addSizeTo #-}
+    addSizeTo acc val = addSizeTo acc (HashMap.toList val)
+    {-# INLINE serializeAt #-}
+    serializeAt off arr val = serializeAt off arr (HashMap.toList val)
+    {-# INLINE deserializeAt #-}
+    deserializeAt off arr end = do
+        (off1, kvList) <- deserializeAt off arr end
         pure (off1, HashMap.fromList kvList)
 
 --------------------------------------------------------------------------------
@@ -123,11 +119,12 @@ instance (Eq k, Hashable k, Serialize k, Serialize v) =>
 --------------------------------------------------------------------------------
 
 #if MIN_VERSION_aeson(2,0,0)
-$(Serialize.deriveSerialize ''Aeson.Key)
-$(Serialize.deriveSerialize ''Aeson.KeyMap)
+$(MBA.deriveSerialize [d|instance Serialize Aeson.Key|])
+$(MBA.deriveSerialize
+      [d|instance Serialize v => Serialize (Aeson.KeyMap v)|])
 #endif
 
-$(Serialize.deriveSerialize ''Aeson.Value)
+$(MBA.deriveSerialize [d|instance Serialize Aeson.Value|])
 
 --------------------------------------------------------------------------------
 -- Vector.Vector
@@ -135,27 +132,27 @@ $(Serialize.deriveSerialize ''Aeson.Value)
 
 instance Serialize a => Serialize (Vector.Vector a) where
 
-    {-# INLINE size #-}
-    size :: Int -> (Vector.Vector a) -> Int
-    size acc = Vector.foldl' size (acc + Unbox.sizeOf (Proxy :: Proxy Int64))
+    {-# INLINE addSizeTo #-}
+    addSizeTo :: Int -> (Vector.Vector a) -> Int
+    addSizeTo acc = Vector.foldl' addSizeTo (acc + MBA.sizeOf (Proxy :: Proxy Int64))
 
-    {-# INLINE serialize #-}
-    serialize :: Int -> MutableByteArray -> (Vector.Vector a) -> IO Int
-    serialize off arr val = do
+    {-# INLINE serializeAt #-}
+    serializeAt :: Int -> MutByteArray -> (Vector.Vector a) -> IO Int
+    serializeAt off arr val = do
         let len = Vector.length val
         finalOffset <-
             Vector.foldM'
-                (\curOff v -> serialize curOff arr v)
-                (off + Unbox.sizeOf (Proxy :: Proxy Int64))
+                (\curOff v -> serializeAt curOff arr v)
+                (off + MBA.sizeOf (Proxy :: Proxy Int64))
                 val
-        Unbox.pokeByteIndex off arr ((fromIntegral :: Int -> Int64) len)
+        MBA.pokeAt off arr ((fromIntegral :: Int -> Int64) len)
         pure finalOffset
 
-    {-# INLINE deserialize #-}
-    deserialize :: Int -> MutableByteArray -> Int -> IO (Int, Vector.Vector a)
-    deserialize off arr s = do
+    {-# INLINE deserializeAt #-}
+    deserializeAt :: Int -> MutByteArray -> Int -> IO (Int, Vector.Vector a)
+    deserializeAt off arr s = do
 
-        (off1, len64) <- deserialize off arr s
+        (off1, len64) <- deserializeAt off arr s
         let len = (fromIntegral :: Int64 -> Int) len64
         val <- MVector.new len
         (off2, val1) <- fillVector len 0 off1 val
@@ -167,6 +164,6 @@ instance Serialize a => Serialize (Vector.Vector a) where
         fillVector len acc off1 val
             | acc >= len = pure (off1, val)
             | otherwise = do
-                (off2, v) <- deserialize off1 arr s
+                (off2, v) <- deserializeAt off1 arr s
                 MVector.write val acc v
                 fillVector len (acc + 1) off2 val

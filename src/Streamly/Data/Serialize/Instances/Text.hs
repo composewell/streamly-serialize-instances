@@ -13,13 +13,11 @@ module Streamly.Data.Serialize.Instances.Text () where
 --------------------------------------------------------------------------------
 
 import Data.Int (Int64)
-import Streamly.Internal.Data.Serialize (Serialize(..))
-import Streamly.Internal.Data.Unbox (MutableByteArray(..))
+import Streamly.Internal.Data.MutByteArray (MutByteArray(..), Serialize(..))
 
 import qualified Data.Text.Internal as Strict (Text(..))
 import qualified Data.Text.Lazy as Lazy
-import qualified Streamly.Internal.Data.Unbox as Unbox
-import qualified Streamly.Internal.Data.Serialize.TH as Serialize
+import qualified Streamly.Internal.Data.MutByteArray as MBA
 
 #if MIN_VERSION_text(2,0,0)
 
@@ -42,27 +40,27 @@ import GHC.Exts
 --------------------------------------------------------------------------------
 
 instance Serialize Strict.Text where
-    size i (Strict.Text _ _ lenTArr) =
+    addSizeTo i (Strict.Text _ _ lenTArr) =
         -- 8 is the length of Int64
         i + LEN_TO_BYTES(lenTArr) + 8
 
-    {-# INLINE deserialize #-}
-    deserialize off arr end = do
-        (off1, lenTArr64) <- deserialize off arr end :: IO (Int, Int64)
+    {-# INLINE deserializeAt #-}
+    deserializeAt off arr end = do
+        (off1, lenTArr64) <- deserializeAt off arr end :: IO (Int, Int64)
         let lenTArr = fromIntegral lenTArr64 :: Int
             lenBytes = fromIntegral (LEN_TO_BYTES(lenTArr))
 
         -- Check the available length in input buffer
         if (off1 + lenBytes <= end)
         then do
-            newArr <- Unbox.newBytes lenBytes
+            newArr <- MBA.new lenBytes
             -- XXX We can perform an unrolled word copy directly?
-            Unbox.putSliceUnsafe arr off1 newArr 0 lenBytes
+            MBA.putSliceUnsafe arr off1 newArr 0 lenBytes
             pure
                 ( off1 + lenBytes
                 , Strict.Text
                       (T_ARR_CON
-                          (unsafeCoerce# (Unbox.getMutableByteArray# newArr)))
+                          (unsafeCoerce# (MBA.getMutableByteArray# newArr)))
                       0
                       lenTArr
                 )
@@ -70,12 +68,12 @@ instance Serialize Strict.Text where
                 ++ show off1 ++ " lenBytes = " ++ show lenBytes
                 ++ " end = " ++ show end
 
-    {-# INLINE serialize #-}
-    serialize off arr (Strict.Text (T_ARR_CON barr#) offTArr lenTArr) = do
-        off1 <- serialize off arr (fromIntegral lenTArr :: Int64)
+    {-# INLINE serializeAt #-}
+    serializeAt off arr (Strict.Text (T_ARR_CON barr#) offTArr lenTArr) = do
+        off1 <- serializeAt off arr (fromIntegral lenTArr :: Int64)
         let lenBytes = LEN_TO_BYTES(lenTArr)
-        Unbox.putSliceUnsafe
-            (MutableByteArray (unsafeCoerce# barr#)) (LEN_TO_BYTES(offTArr))
+        MBA.putSliceUnsafe
+            (MutByteArray (unsafeCoerce# barr#)) (LEN_TO_BYTES(offTArr))
             arr off1
             lenBytes
         pure (off1 + lenBytes)
@@ -84,4 +82,4 @@ instance Serialize Strict.Text where
 -- Lazy Text
 --------------------------------------------------------------------------------
 
-$(Serialize.deriveSerialize ''Lazy.Text)
+$(MBA.deriveSerialize [d|instance Serialize Lazy.Text|])

@@ -6,12 +6,11 @@ import Data.Int (Int64)
 import Foreign.ForeignPtr (withForeignPtr)
 import Foreign.Ptr (plusPtr)
 import GHC.Base (IO(..))
-import Streamly.Internal.Data.Serialize (Serialize(..))
+import Streamly.Internal.Data.MutByteArray (Serialize(..))
 
 import qualified Data.ByteString.Internal as Strict
 import qualified Data.ByteString.Lazy as Lazy
-import qualified Streamly.Internal.Data.Unbox as Unbox
-import qualified Streamly.Internal.Data.Serialize.TH as Serialize
+import qualified Streamly.Internal.Data.MutByteArray as MBA
 
 import GHC.Exts
 
@@ -21,15 +20,15 @@ import GHC.Exts
 
 instance Serialize Strict.ByteString where
 
-    {-# INLINE size #-}
-    size i (Strict.PS _ _ l) = i + l + 8 -- 8 is the length of Int64
+    {-# INLINE addSizeTo #-}
+    addSizeTo i (Strict.PS _ _ l) = i + l + 8 -- 8 is the length of Int64
 
-    {-# INLINE deserialize #-}
-    deserialize off arr end = do
-        (off1, len) <- deserialize off arr end :: IO (Int, Int64)
+    {-# INLINE deserializeAt #-}
+    deserializeAt off arr end = do
+        (off1, len) <- deserializeAt off arr end :: IO (Int, Int64)
         let lenBytes = fromIntegral len
         bs <- Strict.create lenBytes $ \(Ptr addr#) ->
-            let arrS# = Unbox.getMutableByteArray# arr
+            let arrS# = MBA.getMutableByteArray# arr
                 !(I# srcStartBytes#)    = off1
                 !(I# lenBytes#)         = lenBytes
             in IO $ \s# -> (# copyMutableByteArrayToAddr#
@@ -37,10 +36,10 @@ instance Serialize Strict.ByteString where
                     , () #)
         return (off1 + lenBytes, bs)
 
-    {-# INLINE serialize #-}
-    serialize off arr (Strict.PS fp srcOffset lenBytes) = do
-        off1 <- serialize off arr (fromIntegral lenBytes :: Int64)
-        let arrD# = Unbox.getMutableByteArray# arr
+    {-# INLINE serializeAt #-}
+    serializeAt off arr (Strict.PS fp srcOffset lenBytes) = do
+        off1 <- serializeAt off arr (fromIntegral lenBytes :: Int64)
+        let arrD# = MBA.getMutableByteArray# arr
             !(I# dstStartBytes#) = off1
             !(I# lenBytes#) = lenBytes
         withForeignPtr fp $ \srcPtr ->
@@ -54,4 +53,4 @@ instance Serialize Strict.ByteString where
 -- Lazy ByteString
 --------------------------------------------------------------------------------
 
-$(Serialize.deriveSerialize ''Lazy.ByteString)
+$(MBA.deriveSerialize [d|instance Serialize Lazy.ByteString|])
